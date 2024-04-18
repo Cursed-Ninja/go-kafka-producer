@@ -1,9 +1,9 @@
-package kafka_producer
+package kafkaproducer
 
 import (
-	"strings"
+	"context"
 
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/segmentio/kafka-go"
 )
 
 type KafkaProducerInterface interface {
@@ -11,34 +11,33 @@ type KafkaProducerInterface interface {
 }
 
 type kafkaProducer struct {
-	producer *kafka.Producer
+	producer *kafka.Writer
 	topic    string
 }
 
-func NewKafkaProducer(brokers []string, topic string) (*kafkaProducer, error) {
-	producer, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": strings.Join(brokers, ","),
-		"client.id":         "main-server",
-		"acks":              "all",
-	})
-
-	if err != nil {
-		return nil, err
+func NewKafkaProducer(brokers []string, topic string) *kafkaProducer {
+	producer := &kafka.Writer{
+		Addr:     kafka.TCP(brokers...),
+		Topic:    topic,
+		Balancer: &kafka.LeastBytes{},
 	}
 
 	return &kafkaProducer{
 		producer: producer,
 		topic:    topic,
-	}, nil
+	}
 }
 
-func (kp *kafkaProducer) produce(value string) error {
-	return kp.producer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &kp.topic, Partition: int32(kafka.PartitionAny)},
-		Value:          []byte(value),
-	}, nil)
+func (kp *kafkaProducer) produce(value []byte) error {
+
+	return kp.producer.WriteMessages(context.Background(),
+		kafka.Message{
+			Key:   []byte("logs"),
+			Value: value,
+		},
+	)
 }
 
 func (kp *kafkaProducer) Write(val []byte) (int, error) {
-	return len(val), kp.produce(string(val))
+	return len(val), kp.produce(val)
 }
