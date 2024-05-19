@@ -15,12 +15,12 @@ type kafkaProducer struct {
 	topic    string
 }
 
-func NewKafkaProducer(brokers []string, topic string) *kafkaProducer {
+func NewKafkaProducer(brokers []string, topic string, isAsync bool) *kafkaProducer {
 	producer := &kafka.Writer{
 		Addr:     kafka.TCP(brokers...),
 		Topic:    topic,
 		Balancer: &kafka.LeastBytes{},
-		Async:    true,
+		Async:    isAsync,
 	}
 
 	return &kafkaProducer{
