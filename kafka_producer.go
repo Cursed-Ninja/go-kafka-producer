@@ -20,6 +20,7 @@ func NewKafkaProducer(brokers []string, topic string) *kafkaProducer {
 		Addr:     kafka.TCP(brokers...),
 		Topic:    topic,
 		Balancer: &kafka.LeastBytes{},
+		Async:    true,
 	}
 
 	return &kafkaProducer{
@@ -29,7 +30,6 @@ func NewKafkaProducer(brokers []string, topic string) *kafkaProducer {
 }
 
 func (kp *kafkaProducer) produce(value []byte) error {
-
 	return kp.producer.WriteMessages(context.Background(),
 		kafka.Message{
 			Key:   []byte("logs"),
